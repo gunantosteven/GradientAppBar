@@ -372,12 +372,17 @@ class GradientAppBar extends StatefulWidget implements PreferredSizeWidget {
 
   bool _getEffectiveCenterTitle(ThemeData themeData) {
     if (centerTitle != null) return centerTitle;
+    if (themeData.appBarTheme.centerTitle != null)
+      return themeData.appBarTheme.centerTitle;
     assert(themeData.platform != null);
     switch (themeData.platform) {
       case TargetPlatform.android:
       case TargetPlatform.fuchsia:
+      case TargetPlatform.linux:
+      case TargetPlatform.windows:
         return false;
       case TargetPlatform.iOS:
+      case TargetPlatform.macOS:
         return actions == null || actions.length < 2;
     }
     return null;
@@ -418,17 +423,17 @@ class _GradientAppBarState extends State<GradientAppBar> {
     IconThemeData actionsIconTheme = widget.actionsIconTheme ??
         appBarTheme.actionsIconTheme ??
         overallIconTheme;
-    TextStyle centerStyle = widget.textTheme?.title ??
-        appBarTheme.textTheme?.title ??
-        themeData.primaryTextTheme.title;
-    TextStyle sideStyle = widget.textTheme?.body1 ??
-        appBarTheme.textTheme?.body1 ??
-        themeData.primaryTextTheme.body1;
+    TextStyle centerStyle = widget.textTheme?.headline6 ??
+        appBarTheme.textTheme?.headline6 ??
+        themeData.primaryTextTheme.headline6;
+    TextStyle sideStyle = widget.textTheme?.bodyText2 ??
+        appBarTheme.textTheme?.bodyText2 ??
+        themeData.primaryTextTheme.bodyText2;
 
     if (widget.toolbarOpacity != 1.0) {
       final double opacity =
-      const Interval(0.25, 1.0, curve: Curves.fastOutSlowIn)
-          .transform(widget.toolbarOpacity);
+          const Interval(0.25, 1.0, curve: Curves.fastOutSlowIn)
+              .transform(widget.toolbarOpacity);
       if (centerStyle?.color != null)
         centerStyle =
             centerStyle.copyWith(color: centerStyle.color.withOpacity(opacity));
@@ -465,6 +470,9 @@ class _GradientAppBarState extends State<GradientAppBar> {
     if (title != null) {
       bool namesRoute;
       switch (defaultTargetPlatform) {
+        case TargetPlatform.linux:
+        case TargetPlatform.macOS:
+        case TargetPlatform.windows:
         case TargetPlatform.android:
         case TargetPlatform.fuchsia:
           namesRoute = true;
@@ -542,11 +550,11 @@ class _GradientAppBarState extends State<GradientAppBar> {
           widget.bottomOpacity == 1.0
               ? widget.bottom
               : Opacity(
-            opacity:
-            const Interval(0.25, 1.0, curve: Curves.fastOutSlowIn)
-                .transform(widget.bottomOpacity),
-            child: widget.bottom,
-          ),
+                  opacity:
+                      const Interval(0.25, 1.0, curve: Curves.fastOutSlowIn)
+                          .transform(widget.bottomOpacity),
+                  child: widget.bottom,
+                ),
         ],
       );
     }
@@ -587,10 +595,20 @@ class _GradientAppBarState extends State<GradientAppBar> {
         child: Material(
             color: appBarTheme.color ?? themeData.primaryColor,
             elevation:
-            widget.elevation ?? appBarTheme.elevation ?? _defaultElevation,
-            shape: widget.shape,
+                widget.elevation ?? appBarTheme.elevation ?? _defaultElevation,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(
+                bottom: Radius.circular(30.0),
+              ),
+            ),
             child: Container(
-              decoration: BoxDecoration(gradient: widget.gradient),
+              decoration: BoxDecoration(
+                gradient: widget.gradient,
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(30),
+                  bottomRight: Radius.circular(30),
+                ),
+              ),
               child: Semantics(
                 explicitChildNodes: true,
                 child: appBar,
@@ -633,8 +651,8 @@ class _FloatingGradientAppBarState extends State<_FloatingGradientAppBar> {
   }
 
   RenderSliverFloatingPersistentHeader _headerRenderer() {
-    return context.ancestorRenderObjectOfType(
-        const TypeMatcher<RenderSliverFloatingPersistentHeader>());
+    return context
+        .findAncestorRenderObjectOfType<RenderSliverFloatingPersistentHeader>();
   }
 
   void _isScrollingListener() {
